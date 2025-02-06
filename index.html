@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur BFS DFS</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            background-color: #e3f3f3;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            overflow: hidden;
+        }
+        #graph-container {
+            width: 60%;
+        }
+        #graph { 
+            width: 100%;  
+            height: 600px; 
+            border: 2px solid rgb(139, 139, 139); 
+            border-radius: 15px; 
+            background-color: #eaf3ff;
+        }
+        #controls {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .button-container {
+            display: flex;
+            gap: 35px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+        }
+        .bfs { background-color: #e9a8d9; color: white; }
+        .dfs { background-color: #ec9dae; color: white; }
+        .info-section {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .info-title {
+            font-weight: bold;
+        }
+        .info-box {
+            height: 100px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            background-color: #f3f2f2;
+        }
+        .dropdown-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        select {
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #000;
+            font-family: 'Montserrat', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="graph-container">
+        <div id="graph"></div>
+    </div>
+    <div id="controls">
+        <div class="button-container">
+            <button class="bfs">Parcours en largeur BFS</button>
+            <button class="dfs">Parcours en profondeur DFS</button>
+        </div>
+        <div class="dropdown-container">
+          <div class="info-title">Pays de départ :</div>
+          <select id="start-country">
+              <option value="">Sélectionner un pays</option>
+          </select>
+      </div>
+        <div class="info-section">
+            <div class="info-title">FILE (BFS)</div>
+            <div class="info-box"></div>
+        </div>
+        <div class="info-section">
+            <div class="info-title">PILE (DFS)</div>
+            <div class="info-box"></div>
+        </div>
+        <div class="info-section">
+            <div class="info-title">Pays visités :</div>
+            <div class="info-box"></div>
+        </div>
+    </div>
+    
+    <script>
+        fetch('Pays.json')
+            .then(response => response.json())
+            .then(data => {
+                const nodes = new vis.DataSet(data.nodes.map(node => ({ id: node.id, label: node.id })));
+                const edges = new vis.DataSet(data.links.map(link => ({
+                    from: link.pays1,
+                    to: link.pays2
+                })));
+
+                const container = document.getElementById('graph');
+                const dataVis = {
+                    nodes: nodes,
+                    edges: edges
+                };
+
+                const options = {
+                    nodes: {
+                        shape: 'dot',
+                        size: 15,
+                        font: { size: 20, color: '#000000', face: 'Montserrat' }
+                    },
+                    edges: {
+                        width: 2,
+                        color: { color: '#848484', highlight: '#ff628d' },
+                        smooth: { enabled: true, type: 'continuous' }
+                    },
+                    layout: {
+                        randomSeed: 2
+                    },
+                    physics: {
+                        enabled: true
+                    },
+                    interaction: {
+                        dragNodes: false,
+                        zoomView: false,
+                        dragView: false
+                    }
+                };
+
+                const network = new vis.Network(container, dataVis, options);
+
+                // Remplir la liste déroulante avec les pays
+                const countrySelect = document.getElementById('start-country');
+                const sortedNodes = data.nodes.sort((a, b) => a.id.localeCompare(b.id));
+                data.nodes.forEach(node => {
+                    const option = document.createElement('option');
+                    option.value = node.id;
+                    option.textContent = node.id;
+                    countrySelect.appendChild(option);
+                });
+            })
+            .catch(err => {
+                console.error("Erreur lors du chargement du fichier JSON:", err);
+            });
+    </script>
+</body>
+</html>
