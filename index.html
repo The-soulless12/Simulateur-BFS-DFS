@@ -32,6 +32,7 @@
             flex-direction: column;
             gap: 15px;
         }
+
         .button-container {
             display: flex;
             gap: 35px;
@@ -44,9 +45,17 @@
             cursor: pointer;
             box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
+            font-family: 'Montserrat', sans-serif;
         }
         .bfs { background-color: #e9a8d9; color: white; }
         .dfs { background-color: #ec9dae; color: white; }
+        .suivant { background-color: #ec9d9d; color: white; display: none;}
+        button:hover {
+            transform: translateY(-5px); 
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3); 
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
         .info-section {
             display: flex;
             flex-direction: column;
@@ -61,6 +70,7 @@
             border-radius: 10px;
             background-color: #f3f2f2;
         }
+
         .dropdown-container {
             display: flex;
             flex-direction: column;
@@ -72,6 +82,26 @@
             border-radius: 5px;
             border: 1px solid #000;
             font-family: 'Montserrat', sans-serif;
+        }
+
+        .notification {
+            position: fixed;
+            top : -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ffcecf;
+            color: #000000;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease, bottom 0.5s ease;
+        }
+        .notification.show {
+            opacity: 1;
+            top: 20px;
         }
     </style>
 </head>
@@ -102,14 +132,39 @@
             <div class="info-title">Pays visités :</div>
             <div class="info-box"></div>
         </div>
+        <div class="button-container">
+            <button class="suivant">Suivant</button>
+        </div>
+    </div>
+    <div class="notification" id="notification">
+        Veuillez sélectionner un pays avant de lancer l'algorithme !
     </div>
     
     <script>
+        let graph = {};
+        let history = null;
+        let currentIndex = 0;
+        let algorithmType = "";
+
         fetch('Pays.json')
             .then(response => response.json())
             .then(data => {
-                const nodes = new vis.DataSet(data.nodes.map(node => ({ id: node.id, label: node.id })));
-                const edges = new vis.DataSet(data.links.map(link => ({
+                data.links.forEach(link => {
+                    // Création du graphe bidirectionnel
+                    if (!graph[link.pays1]) {
+                        graph[link.pays1] = [];
+                    }
+                    graph[link.pays1].push(link.pays2);
+
+                    if (!graph[link.pays2]) {
+                        graph[link.pays2] = [];
+                    }
+                    graph[link.pays2].push(link.pays1);
+                });
+
+                // Affichage du graphe
+                nodes = new vis.DataSet(data.nodes.map(node => ({ id: node.id, label: node.id })));
+                edges = new vis.DataSet(data.links.map(link => ({
                     from: link.pays1,
                     to: link.pays2
                 })));
@@ -140,13 +195,13 @@
                     interaction: {
                         dragNodes: false,
                         zoomView: false,
-                        dragView: false
+                        dragView: false,
                     }
                 };
-
+                
                 const network = new vis.Network(container, dataVis, options);
 
-                // Remplir la liste déroulante avec les pays
+                // Remplir la liste déroulante avec les pays triés
                 const countrySelect = document.getElementById('start-country');
                 const sortedNodes = data.nodes.sort((a, b) => a.id.localeCompare(b.id));
                 data.nodes.forEach(node => {
@@ -159,6 +214,81 @@
             .catch(err => {
                 console.error("Erreur lors du chargement du fichier JSON:", err);
             });
+
+        document.querySelector('.bfs').addEventListener('click', function() {
+            verifierSelection('BFS');
+        });
+
+        document.querySelector('.dfs').addEventListener('click', function() {
+            verifierSelection('DFS');
+        });
+
+        function verifierSelection(algorithme) {
+            const countrySelect = document.getElementById('start-country');
+            const notification = document.getElementById('notification');
+            const suivantButton = document.querySelector('.suivant');
+            
+            if (!countrySelect.value) {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 2000);
+            } else {
+                suivantButton.style.display = 'inline-block';
+                algorithmType = algorithme;
+
+                console.log(`${algorithme} lancé depuis ${countrySelect.value}`);
+                console.log(`Graph Structure: ${JSON.stringify(graph, null, 2)}`);
+
+                // Appeler le serveur Flask avec une requête POST
+                fetch('http://localhost:5000/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        algorithm: algorithme,
+                        graph: graph,
+                        start: countrySelect.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Résultat de l\'algorithme:', data);
+                    history = data;
+                    currentIndex = 0;
+                    afficherEtape();
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                    });
+                }
+        }
+
+        document.querySelector('.suivant').addEventListener('click', afficherEtape);
+
+        function afficherEtape() {
+            if (!history || currentIndex >= history.visited.length) {
+                console.log("Aucune étape disponible ou déjà à la dernière étape.");
+                return;
+            }
+
+            const queueBox = document.querySelector(".info-section:nth-child(3) .info-box");
+            const stackBox = document.querySelector(".info-section:nth-child(4) .info-box");
+            const visitedBox = document.querySelector(".info-section:nth-child(5) .info-box");
+            
+            if (algorithmType === "BFS" && queueBox) {
+                queueBox.textContent = history.queue[currentIndex].join(" - ");
+            } else if (algorithmType === "DFS" && stackBox) {
+                stackBox.textContent = history.stack[currentIndex].join(" - ");
+            }
+            
+            if (visitedBox) {
+                visitedBox.textContent = history.visited[currentIndex].join(" - ");
+            }
+            
+            currentIndex++;
+        }
     </script>
 </body>
 </html>
