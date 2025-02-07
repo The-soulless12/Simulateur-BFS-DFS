@@ -49,7 +49,7 @@
         }
         .bfs { background-color: #e9a8d9; color: white; }
         .dfs { background-color: #ec9dae; color: white; }
-        .suivant { background-color: #ec9d9d; color: white; display: none;}
+        .suivant { background-color: #ec9d9d; color: white; display: none; content: "";}
         button:hover {
             transform: translateY(-5px); 
             box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3); 
@@ -148,6 +148,10 @@
         let history = null;
         let currentIndex = 0;
         let algorithmType = "";
+
+        const queueBox = document.querySelector(".info-section:nth-child(3) .info-box");
+        const stackBox = document.querySelector(".info-section:nth-child(4) .info-box");
+        const visitedBox = document.querySelector(".info-section:nth-child(5) .info-box");
 
         fetch('Pays.json')
             .then(response => response.json())
@@ -276,6 +280,12 @@
                 document.querySelector('.bfs').disabled = false;
                 document.querySelector('.dfs').disabled = false;
                 document.querySelector('#start-country').disabled = false;
+
+                const currentVisited = history.visited[currentIndex - 1 ];
+                colorierPaysVisites(currentVisited, '#97c3fd', '#2c7ce9')
+                visitedBox.innerHTML = "";
+
+                document.querySelector('.suivant').style.display = 'none';
                 return;
             }
 
@@ -283,10 +293,6 @@
             document.querySelector('.bfs').disabled = true;
             document.querySelector('.dfs').disabled = true;
             document.querySelector('#start-country').disabled = true;
-
-            const queueBox = document.querySelector(".info-section:nth-child(3) .info-box");
-            const stackBox = document.querySelector(".info-section:nth-child(4) .info-box");
-            const visitedBox = document.querySelector(".info-section:nth-child(5) .info-box");
             
             if (algorithmType === "BFS" && queueBox) {
                 const previousQueue = currentIndex > 0 ? history.queue[currentIndex - 1] : [];
@@ -302,8 +308,9 @@
                 const previousVisited = currentIndex > 0 ? history.visited[currentIndex - 1] : [];
                 const currentVisited = history.visited[currentIndex];
                 visitedBox.innerHTML = mettreEnGrasNouveauxPays(previousVisited, currentVisited);
+                colorierPaysVisites(currentVisited, '#fd97cd', '#e92ca4' );
             }
-            
+
             currentIndex++;
         }
 
@@ -317,6 +324,16 @@
                 }
             }).join(" - ");
         }
+
+        function colorierPaysVisites(visitedCountries, couleur1, couleur2) {
+            visitedCountries.forEach(country => {
+                const node = nodes.get(country);
+                if (node) {
+                    nodes.update({ id: country, color: { background: couleur1, border: couleur2 } });
+                }
+            });
+        }
+
     </script>
 </body>
 </html>
