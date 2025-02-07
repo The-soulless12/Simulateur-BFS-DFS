@@ -37,6 +37,10 @@
             display: flex;
             gap: 35px;
         }
+        .button-container-navigation {
+            display: flex;
+            gap: 320px;
+        }
         button {
             padding: 10px;
             font-size: 16px;
@@ -49,7 +53,8 @@
         }
         .bfs { background-color: #e9a8d9; color: white; }
         .dfs { background-color: #ec9dae; color: white; }
-        .suivant { background-color: #ec9d9d; color: white; display: none; content: "";}
+        .suivant { background-color: #ec9d9d; color: white; display: none}
+        .skip { background-color: #cf9dec; color: white; display: none}
         button:hover {
             transform: translateY(-5px); 
             box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3); 
@@ -135,9 +140,9 @@
             <div class="info-title">Pays visités :</div>
             <div class="info-box"></div>
         </div>
-        <div class="button-container">
+        <div class="button-container-navigation">
             <button class="suivant">Suivant</button>
-        </div>
+            <button class="skip">Skip</button>
     </div>
     <div class="notification" id="notification">
         Veuillez sélectionner un pays avant de lancer l'algorithme !
@@ -234,6 +239,7 @@
             const countrySelect = document.getElementById('start-country');
             const notification = document.getElementById('notification');
             const suivantButton = document.querySelector('.suivant');
+            const skipButton = document.querySelector('.skip');
             
             if (!countrySelect.value) {
                 notification.classList.add('show');
@@ -242,6 +248,7 @@
                 }, 2000);
             } else {
                 suivantButton.style.display = 'inline-block';
+                skipButton.style.display = 'inline-block';
                 algorithmType = algorithme;
 
                 console.log(`${algorithme} lancé depuis ${countrySelect.value}`);
@@ -275,6 +282,12 @@
         document.querySelector('.suivant').addEventListener('click', afficherEtape);
 
         function afficherEtape() {
+            document.querySelector('.skip').addEventListener('click', function() {
+                currentIndex = history.visited.length - 1;
+                document.querySelector('.skip').style.display = 'none';
+                afficherEtape();
+            });
+
             if (!history || currentIndex >= history.visited.length) {
                 console.log("Aucune étape disponible ou déjà à la dernière étape.");
                 document.querySelector('.bfs').disabled = false;
@@ -286,7 +299,12 @@
                 visitedBox.innerHTML = "";
 
                 document.querySelector('.suivant').style.display = 'none';
+                document.querySelector('.suivant').textContent = 'Suivant';
                 return;
+            }
+
+            if (currentIndex === history.visited.length - 1) {
+                document.querySelector('.suivant').textContent = 'Terminer';
             }
 
             // On désactive les boutons et la liste déroulante pendant l'exécution
