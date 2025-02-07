@@ -69,6 +69,9 @@
             border: 2px solid #000;
             border-radius: 10px;
             background-color: #f3f2f2;
+            padding: 2px;
+            box-sizing: border-box;
+            overflow-y: auto
         }
 
         .dropdown-container {
@@ -270,24 +273,49 @@
         function afficherEtape() {
             if (!history || currentIndex >= history.visited.length) {
                 console.log("Aucune étape disponible ou déjà à la dernière étape.");
+                document.querySelector('.bfs').disabled = false;
+                document.querySelector('.dfs').disabled = false;
+                document.querySelector('#start-country').disabled = false;
                 return;
             }
+
+            // On désactive les boutons et la liste déroulante pendant l'exécution
+            document.querySelector('.bfs').disabled = true;
+            document.querySelector('.dfs').disabled = true;
+            document.querySelector('#start-country').disabled = true;
 
             const queueBox = document.querySelector(".info-section:nth-child(3) .info-box");
             const stackBox = document.querySelector(".info-section:nth-child(4) .info-box");
             const visitedBox = document.querySelector(".info-section:nth-child(5) .info-box");
             
             if (algorithmType === "BFS" && queueBox) {
-                queueBox.textContent = history.queue[currentIndex].join(" - ");
+                const previousQueue = currentIndex > 0 ? history.queue[currentIndex - 1] : [];
+                const currentQueue = history.queue[currentIndex];
+                queueBox.innerHTML = mettreEnGrasNouveauxPays(previousQueue, currentQueue);
             } else if (algorithmType === "DFS" && stackBox) {
-                stackBox.textContent = history.stack[currentIndex].join(" - ");
+                const previousStack = currentIndex > 0 ? history.stack[currentIndex - 1] : [];
+                const currentStack = history.stack[currentIndex];
+                stackBox.innerHTML = mettreEnGrasNouveauxPays(previousStack, currentStack);
             }
             
             if (visitedBox) {
-                visitedBox.textContent = history.visited[currentIndex].join(" - ");
+                const previousVisited = currentIndex > 0 ? history.visited[currentIndex - 1] : [];
+                const currentVisited = history.visited[currentIndex];
+                visitedBox.innerHTML = mettreEnGrasNouveauxPays(previousVisited, currentVisited);
             }
             
             currentIndex++;
+        }
+
+        function mettreEnGrasNouveauxPays(previousList, currentList) {
+            return currentList.map(country => {
+                // Si le pays est nouveau, on l'affiche en gras
+                if (!previousList.includes(country)) {
+                    return `<strong>${country}</strong>`;
+                } else {
+                    return country;
+                }
+            }).join(" - ");
         }
     </script>
 </body>
