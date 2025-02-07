@@ -153,6 +153,8 @@
         let history = null;
         let currentIndex = 0;
         let algorithmType = "";
+        let visitedOrder = {};
+        let visitCounter = 1;
 
         const queueBox = document.querySelector(".info-section:nth-child(3) .info-box");
         const stackBox = document.querySelector(".info-section:nth-child(4) .info-box");
@@ -191,7 +193,7 @@
                     nodes: {
                         shape: 'dot',
                         size: 15,
-                        font: { size: 20, color: '#000000', face: 'Montserrat' }
+                        font: { size: 20, color: '#000000', face: 'Montserrat', multi: true }
                     },
                     edges: {
                         width: 2,
@@ -295,7 +297,7 @@
                 document.querySelector('#start-country').disabled = false;
 
                 const currentVisited = history.visited[currentIndex - 1 ];
-                colorierPaysVisites(currentVisited, '#97c3fd', '#2c7ce9')
+                modifierPaysVisites(currentVisited, '#97c3fd', '#2c7ce9', false);
                 visitedBox.innerHTML = "";
 
                 document.querySelector('.suivant').style.display = 'none';
@@ -305,6 +307,7 @@
 
             if (currentIndex === history.visited.length - 1) {
                 document.querySelector('.suivant').textContent = 'Terminer';
+                document.querySelector('.skip').style.display = 'none';
             }
 
             // On désactive les boutons et la liste déroulante pendant l'exécution
@@ -315,24 +318,24 @@
             if (algorithmType === "BFS" && queueBox) {
                 const previousQueue = currentIndex > 0 ? history.queue[currentIndex - 1] : [];
                 const currentQueue = history.queue[currentIndex];
-                queueBox.innerHTML = mettreEnGrasNouveauxPays(previousQueue, currentQueue);
+                queueBox.innerHTML = mettreEnGras(previousQueue, currentQueue);
             } else if (algorithmType === "DFS" && stackBox) {
                 const previousStack = currentIndex > 0 ? history.stack[currentIndex - 1] : [];
                 const currentStack = history.stack[currentIndex];
-                stackBox.innerHTML = mettreEnGrasNouveauxPays(previousStack, currentStack);
+                stackBox.innerHTML = mettreEnGras(previousStack, currentStack);
             }
             
             if (visitedBox) {
                 const previousVisited = currentIndex > 0 ? history.visited[currentIndex - 1] : [];
                 const currentVisited = history.visited[currentIndex];
-                visitedBox.innerHTML = mettreEnGrasNouveauxPays(previousVisited, currentVisited);
-                colorierPaysVisites(currentVisited, '#fd97cd', '#e92ca4' );
+                visitedBox.innerHTML = mettreEnGras(previousVisited, currentVisited);
+                modifierPaysVisites(currentVisited, '#fd97cd', '#e92ca4', true);
             }
 
             currentIndex++;
         }
 
-        function mettreEnGrasNouveauxPays(previousList, currentList) {
+        function mettreEnGras(previousList, currentList) {
             return currentList.map(country => {
                 // Si le pays est nouveau, on l'affiche en gras
                 if (!previousList.includes(country)) {
@@ -343,11 +346,19 @@
             }).join(" - ");
         }
 
-        function colorierPaysVisites(visitedCountries, couleur1, couleur2) {
+        function modifierPaysVisites(visitedCountries, couleur1, couleur2, reset) {
             visitedCountries.forEach(country => {
+                if (!(country in visitedOrder)) {
+                    visitedOrder[country] = visitCounter++;
+                }
+
                 const node = nodes.get(country);
                 if (node) {
-                    nodes.update({ id: country, color: { background: couleur1, border: couleur2 } });
+                    if (reset === false) {
+                        nodes.update({ id: country, label: `${country}`, color: { background: couleur1, border: couleur2 } });
+                    } else if (reset === true) {
+                        nodes.update({ id: country, label: `${country}\n(<b>${visitedOrder[country]}</b>)`, color: { background: couleur1, border: couleur2 } });
+                    }
                 }
             });
         }
